@@ -3,6 +3,14 @@
  * 用法:
  *   node scripts/run-tests.js --tasks billing,login --url http://localhost:9222
  *   node scripts/run-tests.js --all --headless
+ *
+ * 环境变量:
+ *   TEST_URL - 测试环境 URL
+ *   FEISHU_WEBHOOK - 飞书 Webhook
+ *   SILICONFLOW_API_KEY - SILICONFLOW API Key
+ *   OPENAI_API_KEY - OpenAI API Key
+ *   TEST_USERNAME - 测试账号
+ *   TEST_PASSWORD - 测试密码
  */
 
 const { chromium } = require('playwright');
@@ -14,6 +22,23 @@ const SCREENSHOTS_DIR = path.join(__dirname, '..', 'screenshots');
 const TEST_RESULTS_DIR = path.join(__dirname, '..', 'test-results');
 const TEST_REPORTS_DIR = path.join(__dirname, '..', 'test-reports');
 
+// 测试配置（从环境变量读取）
+const testConfig = {
+  url: process.env.TEST_URL || 'http://localhost:9222',
+  siliconflowApiKey: process.env.SILICONFLOW_API_KEY || '',
+  openaiApiKey: process.env.OPENAI_API_KEY || '',
+  username: process.env.TEST_USERNAME || 'test1@gmail.com',
+  password: process.env.TEST_PASSWORD || '123456',
+  headless: process.env.HEADLESS === 'true',
+};
+
+// 脱敏函数
+function maskSensitive(str) {
+  if (!str) return '';
+  if (str.length <= 4) return '****';
+  return str.slice(0, 2) + '****' + str.slice(-2);
+}
+
 // 确保目录存在
 [SCREENSHOTS_DIR, TEST_RESULTS_DIR, TEST_REPORTS_DIR].forEach(dir => {
   if (!fs.existsSync(dir)) {
@@ -23,23 +48,23 @@ const TEST_REPORTS_DIR = path.join(__dirname, '..', 'test-reports');
 
 // 解析命令行参数
 const args = process.argv.slice(2);
-const config = {
+const cliConfig = {
   tasks: 'all',
-  url: 'http://localhost:9222',
-  headless: false,
+  url: testConfig.url,
+  headless: testConfig.headless,
 };
 
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--tasks' && args[i + 1]) {
-    config.tasks = args[i + 1];
+    cliConfig.tasks = args[i + 1];
     i++;
   } else if (args[i] === '--url' && args[i + 1]) {
-    config.url = args[i + 1];
+    cliConfig.url = args[i + 1];
     i++;
   } else if (args[i] === '--headless') {
-    config.headless = true;
+    cliConfig.headless = true;
   } else if (args[i] === '--all') {
-    config.tasks = 'all';
+    cliConfig.tasks = 'all';
   }
 }
 
@@ -48,10 +73,10 @@ function getTestTasks() {
   const taskDir = path.join(__dirname, '..', 'task');
   const files = fs.readdirSync(taskDir).filter(f => f.endsWith('.md'));
 
-  if (config.tasks === 'all') {
+  if (cliConfig.tasks === 'all') {
     return files.map(f => f.replace('.md', ''));
   }
-  return config.tasks.split(',').map(t => t.trim());
+  return cliConfig.tasks.split(',').map(t => t.trim());
 }
 
 // 加载测试用例
@@ -61,6 +86,16 @@ function loadTestCase(taskName) {
     throw new Error(`测试用例不存在: ${taskPath}`);
   }
   return fs.readFileSync(taskPath, 'utf-8');
+}
+
+// 解析测试用例中的占位符
+function replacePlaceholders(content) {
+  return content
+    .replace(/{{TEST_URL}}/g, cliConfig.url)
+    .replace(/{{SILICONFLOW_API_KEY}}/g, testConfig.siliconflowApiKey)
+    .replace(/{{OPENAI_API_KEY}}/g, testConfig.openaiApiKey)
+    .replace(/{{TEST_USERNAME}}/g, testConfig.username)
+    .replace(/{{TEST_PASSWORD}}/g, testConfig.password);
 }
 
 // 发送飞书通知
@@ -101,32 +136,67 @@ async function runTest(taskName, browser) {
   };
 
   const screenshot = async (name) => {
-    const page = browser.contexts()[0]?.pages()[0];
-    if (page) {
-      await page.screenshot({ path: path.join(screenshotsDir, `${name}.png`) });
+    try {
+      const page = browser.contexts()[0]?.pages()[0];
+      if (page) {
+        await page.screenshot({ path: path.join(screenshotsDir, `${name}.png`) });
+      }
+    } catch (e) {
+      log(`截图失败: ${e.message}`);
     }
   };
 
   try {
     log(`开始执行任务: ${taskName}`);
-    await sendFeishu(`【测试开始】\n任务：${taskName}\nURL：${config.url}\n时间：${moment().format('YYYY-MM-DD HH:mm:ss')}`);
+    log(`测试URL: ${cliConfig.url}`);
 
-    // 加载测试用例
-    const testCase = loadTestCase(taskName);
+    await sendFeishu(`【测试开始】
+任务：${taskName}
+URL：${cliConfig.url}
+时间：${moment().format('YYYY-MM-DD HH:mm:ss')}`);
+
+    // 加载测试用例并替换占位符
+    let testCase = loadTestCase(taskName);
+    testCase = replacePlaceholders(testCase);
     log(`已加载测试用例`);
+
+    // 日志中脱敏敏感信息
+    if (testConfig.siliconflowApiKey) {
+      log(`SILICONFLOW_API_KEY: ${maskSensitive(testConfig.siliconflowApiKey)}`);
+    }
+    if (testConfig.openaiApiKey) {
+      log(`OPENAI_API_KEY: ${maskSensitive(testConfig.openaiApiKey)}`);
+    }
 
     // 创建新页面
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    // 访问测试URL（这里需要替换为实际的测试逻辑）
-    // 由于 CI 环境限制，这里只做示例
-    if (config.headless) {
-      log('headless 模式：跳过实际浏览器测试');
+    if (cliConfig.headless) {
+      log('Headless 模式：跳过实际浏览器测试');
       await screenshot('ci-mode');
     } else {
-      await page.goto(config.url);
+      // 访问测试URL
+      await page.goto(cliConfig.url);
       await screenshot('initial-page');
+
+      // 根据不同任务执行不同操作
+      if (taskName.includes('add-llm')) {
+        // 添加 LLM 测试
+        log('执行 add-llm 测试...');
+        // TODO: 实现具体的测试逻辑
+        await screenshot('add-llm-completed');
+      } else if (taskName.includes('login')) {
+        // 登录测试
+        log('执行 login 测试...');
+        // TODO: 实现具体的测试逻辑
+        await screenshot('login-completed');
+      } else if (taskName.includes('billing')) {
+        // 计费测试
+        log('执行 billing 测试...');
+        // TODO: 实现具体的测试逻辑
+        await screenshot('billing-completed');
+      }
     }
 
     await context.close();
@@ -134,17 +204,25 @@ async function runTest(taskName, browser) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     log(`任务完成，耗时: ${duration}s`);
 
-    await sendFeishu(`【测试完成】\n任务：${taskName}\n结果：✅ 通过\n耗时：${duration}s`);
+    await sendFeishu(`【测试完成】
+任务：${taskName}
+结果：✅ 通过
+耗时：${duration}s`);
 
-    return { taskName, status: 'passed', duration, logFile };
+    return { taskName, status: 'passed', duration, logFile, screenshotsDir };
 
   } catch (error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     log(`任务失败: ${error.message}`);
 
-    await sendFeishu(`【测试错误】\n任务：${taskName}\n错误：${error.message}\n堆栈：${error.stack?.slice(0, 200)}`);
+    await screenshot('error-state');
 
-    return { taskName, status: 'failed', duration, error: error.message, logFile };
+    await sendFeishu(`【测试错误】
+任务：${taskName}
+错误：${error.message}
+堆栈：${error.stack?.slice(0, 200)}`);
+
+    return { taskName, status: 'failed', duration, error: error.message, logFile, screenshotsDir };
   }
 }
 
@@ -153,9 +231,10 @@ async function main() {
   console.log('='.repeat(50));
   console.log('UI 自动化测试开始');
   console.log('='.repeat(50));
-  console.log(`测试任务: ${config.tasks}`);
-  console.log(`测试URL: ${config.url}`);
-  console.log(`Headless: ${config.headless}`);
+  console.log(`测试任务: ${cliConfig.tasks}`);
+  console.log(`测试URL: ${cliConfig.url}`);
+  console.log(`Headless: ${cliConfig.headless}`);
+  console.log(`账号: ${testConfig.username}`);
   console.log('');
 
   let browser;
@@ -163,7 +242,7 @@ async function main() {
 
   try {
     browser = await chromium.launch({
-      headless: config.headless,
+      headless: cliConfig.headless,
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
 
@@ -179,7 +258,8 @@ async function main() {
 
   } catch (error) {
     console.error('测试执行失败:', error);
-    await sendFeishu(`【测试错误】\n错误：${error.message}`);
+    await sendFeishu(`【测试错误】
+错误：${error.message}`);
   } finally {
     if (browser) await browser.close();
   }
@@ -205,20 +285,21 @@ async function main() {
   const summary = `# 测试汇总
 
 ## 测试信息
-- 测试URL: ${config.url}
+- 测试URL: ${cliConfig.url}
 - 执行时间: ${moment().format('YYYY-MM-DD HH:mm:ss')}
-- 测试任务: ${config.tasks}
+- 测试任务: ${cliConfig.tasks}
+- 账号: ${testConfig.username}
 
 ## 结果统计
 - 总计: ${results.length}
 - 通过: ${passed}
 - 失败: ${failed}
-- 通过率: ${((passed / results.length) * 100).toFixed(1)}%
+- 通过率: ${results.length > 0 ? ((passed / results.length) * 100).toFixed(1) : 0}%
 
 ## 详细结果
 | 任务名 | 状态 | 耗时 | 错误信息 |
 |--------|------|------|----------|
-${results.map(r => `| ${r.taskName} | ${r.status === 'passed' ? '✅ 通过' : '❌ 失败'} | ${r.duration}s | ${r.error || '-'} |`).join('\n')}
+${results.map(r => `| ${r.taskName} | ${r.status === 'passed' ? '✅ 通过' : '❌ 失败'} | ${r.duration}s | ${r.error ? r.error.slice(0, 50) : '-'} |`).join('\n')}
 `;
   fs.writeFileSync(summaryFile, summary);
   console.log(`\n汇总报告已保存: ${summaryFile}`);

@@ -59,6 +59,10 @@ jobs:
         env:
           TEST_URL: ${{ secrets.TEST_URL }}
           FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+          SILICONFLOW_API_KEY: ${{ secrets.SILICONFLOW_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TEST_USERNAME: ${{ secrets.TEST_USERNAME }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
 
       - name: Upload test screenshots
         if: always()

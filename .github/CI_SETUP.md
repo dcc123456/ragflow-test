@@ -15,6 +15,10 @@
 |-------------|------|------|--------|
 | `TEST_URL` | 是 | 测试环境的 URL | `http://192.168.1.23:9222/` |
 | `FEISHU_WEBHOOK` | 否 | 飞书 Webhook 地址 | `https://open.feishu.cn/open-apis/bot/v2/hook/xxx` |
+| `SILICONFLOW_API_KEY` | 否 | SILICONFLOW 模型 API Key | `sk-micttjpgbylrnravzhocmdwdxwhjydmhwrnmoxlkqrqjkavv` |
+| `OPENAI_API_KEY` | 否 | OpenAI API Key | `sk-xxxxxx` |
+| `TEST_USERNAME` | 否 | 测试账号用户名 | `test1@gmail.com` |
+| `TEST_PASSWORD` | 否 | 测试账号密码 | `123456` |
 
 ### 2. 启用 GitHub Actions
 
