@@ -1,0 +1,85 @@
+name: UI Automated Test
+
+on:
+  # push 到 main 分支时触发
+  push:
+    branches: [main]
+  # PR 合并前触发
+  pull_request:
+    branches: [main]
+  # 手动触发
+  workflow_dispatch:
+    inputs:
+      test_tasks:
+        description: '测试任务（逗号分隔，如：billing,login,add-llm）'
+        required: false
+        default: 'all'
+      test_url:
+        description: '测试 URL'
+        required: false
+        default: ''
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  ui-test:
+    name: UI Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chrome/Chromium
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium chromium-driver
+
+      - name: Setup Chrome environment
+        run: |
+          echo "CHROME_PATH=/usr/bin/chromium" >> $GITHUB_ENV
+          echo "CHROMEDRIVER_PATH=/usr/bin/chromedriver" >> $GITHUB_ENV
+
+      - name: Run UI Tests
+        run: |
+          node scripts/run-tests.js \
+            --tasks ${{ github.event.inputs.test_tasks || 'all' }} \
+            --url ${{ github.event.inputs.test_url || env.TEST_URL || 'http://localhost:9222' }} \
+            --headless
+        env:
+          TEST_URL: ${{ secrets.TEST_URL }}
+          FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+
+      - name: Upload test screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-screenshots-${{ github.run_id }}
+          path: screenshots/**/*.png
+          retention-days: 7
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-${{ github.run_id }}
+          path: test-results/**/*.log
+          retention-days: 7
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ github.run_id }}
+          path: test-reports/**/*.md
+          retention-days: 30
