@@ -2,28 +2,37 @@
  * Stripe Billing 订阅流程 Playwright 自动化测试
  *
  * 测试目标: 验证用户完成 Stripe Checkout 订阅购买的完整流程
- * 测试环境: http://192.168.1.23:9223/
- * 测试账号: yuzhichang@gmail.com / 123456
+ *
+ * 环境变量配置（参考 .env.example）:
+ *   TEST_URL          - 测试环境URL（默认: http://localhost:9222）
+ *   BILLING_EMAIL     - Billing测试账号邮箱
+ *   BILLING_PASSWORD  - Billing测试账号密码
+ *   TEST_CARD_NAME    - Stripe测试卡持卡人姓名
+ *   TEST_CARD_NUMBER  - Stripe测试卡号（默认: 4242424242424242）
+ *   TEST_CARD_EXPIRY  - Stripe测试卡有效期（默认: 12/26）
+ *   TEST_CARD_CVC     - Stripe测试卡CVC（默认: 123）
+ *   TEST_CARD_ZIP     - Stripe测试卡邮编（默认: 12345）
  *
  * 注意: Stripe Elements 有防自动化措施，卡号/到期日/CVC 在受保护的 iframe 内
  * 如需完整自动化，建议使用 Stripe 的测试配置或后端模拟
  *
  * 运行方式:
- *   node billing-test.playwright.js
+ *   node -r dotenv/config billing-test.playwright.js
  */
 
 const { chromium } = require("playwright");
+require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
 
 const TEST_CONFIG = {
-  baseUrl: "http://192.168.1.23:9223",
-  email: "yuzhichang@gmail.com",
-  password: "123456",
+  baseUrl: process.env.BILLING_URL || process.env.TEST_URL || "http://localhost:9222",
+  email: process.env.BILLING_EMAIL || "yuzhichang@gmail.com",
+  password: process.env.BILLING_PASSWORD || "123456",
   testCard: {
-    number: "4242424242424242",
-    expiry: "12/26",
-    cvc: "123",
-    zip: "12345",
-    name: "yuzhichang",
+    name: process.env.TEST_CARD_NAME || "test-user",
+    number: process.env.TEST_CARD_NUMBER || "4242424242424242",
+    expiry: process.env.TEST_CARD_EXPIRY || "12/26",
+    cvc: process.env.TEST_CARD_CVC || "123",
+    zip: process.env.TEST_CARD_ZIP || "12345",
   },
   timeout: 30000,
 };

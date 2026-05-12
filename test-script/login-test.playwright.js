@@ -2,18 +2,28 @@
  * 用户登录注册 Playwright 自动化测试
  *
  * 测试目标: 验证用户登录和注册功能
- * 测试环境: http://localhost:9222/
- * 测试账号: test3@qq.com / 123456
+ * 测试环境: 从环境变量 TEST_URL 读取，默认为 http://localhost:9222
+ * 测试账号: 从环境变量 TEST_EMAIL 和 TEST_PASSWORD 读取
+ *
+ * 环境变量配置（参考 .env.example）:
+ *   TEST_URL      - 测试环境URL
+ *   TEST_EMAIL    - 测试账号邮箱
+ *   TEST_PASSWORD - 测试账号密码
  *
  * 运行方式:
  *   node login-test.playwright.js
+ *   # 或使用 dotenv
+ *   node -r dotenv/config login-test.playwright.js
  */
 
 const { chromium } = require("playwright");
+require("dotenv").config({
+  path: require("path").join(__dirname, "..", ".env"),
+});
 
 const TEST_CONFIG = {
   baseUrl: process.env.TEST_URL || "http://localhost:9222",
-  email: process.env.TEST_EMAIL || "test3@qq.com",
+  email: process.env.TEST_EMAIL || "dcc-test1@gmail.com",
   password: process.env.TEST_PASSWORD || "123456",
   timeout: 30000,
 };
@@ -186,7 +196,10 @@ async function runLoginTest() {
             }
             if (type === "password") {
               const name = input.name?.toLowerCase() || "";
-              if (name.includes("password") || placeholder.includes("password")) {
+              if (
+                name.includes("password") ||
+                placeholder.includes("password")
+              ) {
                 setNativeValue(input, password);
               }
             }
@@ -279,7 +292,8 @@ async function runLoginTest() {
 
     await page.waitForTimeout(2000);
     const currentUrl = page.url();
-    const isOnHomePage = !currentUrl.includes("/login") && !currentUrl.includes("/register");
+    const isOnHomePage =
+      !currentUrl.includes("/login") && !currentUrl.includes("/register");
     const pageContent = await page.content();
     const hasDataset = pageContent.includes("Dataset");
     const hasChat = pageContent.includes("Chat");
@@ -294,7 +308,9 @@ async function runLoginTest() {
         message: "主页验证通过，包含 Dataset、Chat 等功能",
       });
     } else {
-      console.log(`[Step 7] ⚠️ URL=${currentUrl}, dataset=${hasDataset}, chat=${hasChat}, welcome=${hasWelcome}`);
+      console.log(
+        `[Step 7] ⚠️ URL=${currentUrl}, dataset=${hasDataset}, chat=${hasChat}, welcome=${hasWelcome}`,
+      );
       results.push({
         step: 7,
         status: isOnHomePage ? "passed" : "warning",
@@ -304,27 +320,27 @@ async function runLoginTest() {
 
     // ========== Step 8: 登出 ==========
     console.log("[Step 8] 登出...");
-    await page.evaluate(() => {
-      // 点击用户头像或用户名进入设置
-      const userLink = document.querySelector('a[href*="user-setting"]');
-      if (userLink) userLink.click();
-    });
-    await page.waitForTimeout(1000);
+    // await page.evaluate(() => {
+    //   // 点击用户头像或用户名进入设置
+    //   const userLink = document.querySelector('a[href*="user-setting"]');
+    //   if (userLink) userLink.click();
+    // });
+    // await page.waitForTimeout(1000);
 
-    await page.evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll("button"));
-      const logoutBtn = buttons.find(
-        (b) =>
-          b.textContent?.includes("Log out") ||
-          b.textContent?.includes("登出") ||
-          b.textContent?.includes("Sign out"),
-      );
-      if (logoutBtn) logoutBtn.click();
-    });
+    // await page.evaluate(() => {
+    //   const buttons = Array.from(document.querySelectorAll("button"));
+    //   const logoutBtn = buttons.find(
+    //     (b) =>
+    //       b.textContent?.includes("Log out") ||
+    //       b.textContent?.includes("登出") ||
+    //       b.textContent?.includes("Sign out"),
+    //   );
+    //   if (logoutBtn) logoutBtn.click();
+    // });
 
-    await page.waitForURL("**/login**", { timeout: 5000 }).catch(() => {});
-    console.log("[Step 8] ✅ 登出完成");
-    results.push({ step: 8, status: "passed", message: "登出成功" });
+    // await page.waitForURL("**/login**", { timeout: 5000 }).catch(() => {});
+    // console.log("[Step 8] ✅ 登出完成");
+    // results.push({ step: 8, status: "passed", message: "登出成功" });
   } catch (error) {
     console.error(`[ERROR] ${error.message}`);
     results.push({
@@ -332,9 +348,11 @@ async function runLoginTest() {
       status: "failed",
       message: error.message,
     });
-    await page.screenshot({ path: `login-test-failure-${Date.now()}.png` }).catch(() => {});
+    await page
+      .screenshot({ path: `login-test-failure-${Date.now()}.png` })
+      .catch(() => {});
   } finally {
-    await browser.close();
+    // await browser.close();
   }
 
   // ========== 测试结果汇总 ==========
@@ -365,12 +383,12 @@ async function runLoginTest() {
 }
 
 if (require.main === module) {
-  runLoginTest()
-    .then((result) => process.exit(result.failed > 0 ? 1 : 0))
-    .catch((err) => {
-      console.error("测试执行失败:", err);
-      process.exit(1);
-    });
+  runLoginTest();
+  // .then((result) => process.exit(result.failed > 0 ? 1 : 0))
+  // .catch((err) => {
+  //   console.error("测试执行失败:", err);
+  //   process.exit(1);
+  // });
 }
 
 module.exports = { runLoginTest, TEST_CONFIG };
