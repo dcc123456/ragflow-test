@@ -1,21 +1,21 @@
 ---
 name: mcp-web-testing-setup
-description: Setup and configure MCP (Model Context Protocol) servers for web testing, specifically Puppeteer and Chrome DevTools MCP servers. Use when user wants to install, configure, or verify MCP web testing tools. This skill handles the complete setup process including installation, configuration, and validation of these MCP servers for browser automation and web testing tasks.
+description: Setup and configure MCP (Model Context Protocol) servers for web testing, specifically Playwright and Chrome DevTools MCP servers. Use when user wants to install, configure, or verify MCP web testing tools. This skill handles the complete setup process including installation, configuration, and validation of these MCP servers for browser automation and web testing tasks.
 ---
 
 # MCP Web Testing Setup
 
 ## Overview
 
-This skill sets up MCP servers for web testing and browser automation. It configures Puppeteer MCP and Chrome DevTools MCP servers, enabling browser automation, screenshot capture, form interaction, and performance metrics collection.
+This skill sets up MCP servers for web testing and browser automation. It configures Playwright MCP and Chrome DevTools MCP servers, enabling browser automation, screenshot capture, form interaction, and performance metrics collection.
 
 ## Quick Setup
 
 To install both MCP servers for web testing, run these commands:
 
 ```bash
-# Install Puppeteer MCP server (user-wide installation)
-claude mcp add -s user puppeteer -- npx -y @modelcontextprotocol/server-puppeteer
+# Install Playwright MCP server (user-wide installation)
+claude mcp add -s user playwright -- npx -y @modelcontextprotocol/server-playwright
 
 # Install Chrome DevTools MCP server (user-wide installation)
 claude mcp add -s user chrome-devtools -- npx -y chrome-devtools-mcp@latest
@@ -39,17 +39,17 @@ Expected output for new installation:
 No MCP servers configured. Use `claude mcp add` to add a server.
 ```
 
-### Step 2: Install Puppeteer MCP Server
+### Step 2: Install Playwright MCP Server
 
-Puppeteer MCP provides browser automation capabilities including navigation, clicking, form filling, and screenshots.
+Playwright MCP provides browser automation capabilities including navigation, clicking, form filling, and screenshots.
 
 ```bash
-claude mcp add -s user puppeteer -- npx -y @modelcontextprotocol/server-puppeteer
+claude mcp add -s user playwright -- npx -y @modelcontextprotocol/server-playwright
 ```
 
 **What this does:**
-- Adds Puppeteer MCP server to user configuration (~/.claude.json)
-- Server command: npx -y @modelcontextprotocol/server-puppeteer
+- Adds Playwright MCP server to user configuration (~/.claude.json)
+- Server command: npx -y @modelcontextprotocol/server-playwright
 - Transport type: stdio
 
 ### Step 3: Install Chrome DevTools MCP Server
@@ -77,7 +77,7 @@ Expected output:
 ```
 Checking MCP server health...
 
-puppeteer: npx -y @modelcontextprotocol/server-puppeteer - Connected
+playwright: npx -y @modelcontextprotocol/server-playwright - Connected
 chrome-devtools: npx -y chrome-devtools-mcp@latest - Connected
 ```
 
@@ -113,32 +113,32 @@ The -- separator separates claude mcp add options from the server command:
 
 After installation, these MCP tools become available:
 
-### Puppeteer MCP Tools (38 tools)
+### Playwright MCP Tools
 
 **Navigation:**
-- mcp__puppeteer__navigate - Navigate to URL
-- mcp__puppeteer__go_back - Browser back navigation
-- mcp__puppeteer__go_forward - Browser forward navigation
-- mcp__puppeteer__reload - Reload page
+- mcp__playwright__navigate - Navigate to URL
+- mcp__playwright__go_back - Browser back navigation
+- mcp__playwright__go_forward - Browser forward navigation
+- mcp__playwright__reload - Reload page
 
 **Interaction:**
-- mcp__puppeteer__click - Click element
-- mcp__puppeteer__fill - Fill form fields
-- mcp__puppeteer__select - Select dropdown options
-- mcp__puppeteer__hover - Hover over elements
-- mcp__puppeteer__type_text - Type text
-- mcp__puppeteer__upload_file - Upload file
+- mcp__playwright__click - Click element
+- mcp__playwright__fill - Fill form fields
+- mcp__playwright__select - Select dropdown options
+- mcp__playwright__hover - Hover over elements
+- mcp__playwright__type_text - Type text
+- mcp__playwright__upload_file - Upload file
 
 **Screenshot:**
-- mcp__puppeteer__screenshot - Take screenshot
+- mcp__playwright__screenshot - Take screenshot
 
 **JavaScript:**
-- mcp__puppeteer__evaluate - Execute JavaScript
+- mcp__playwright__evaluate - Execute JavaScript
 
 **Verification:**
-- mcp__puppeteer__wait_for - Wait for element/condition
-- mcp__puppeteer__console_messages - Get console logs
-- mcp__puppeteer__network_requests - Get network requests
+- mcp__playwright__wait_for - Wait for element/condition
+- mcp__playwright__console_messages - Get console logs
+- mcp__playwright__network_requests - Get network requests
 
 ### Chrome DevTools MCP Tools (3 tools)
 
@@ -157,7 +157,7 @@ claude mcp list
 ### Remove a MCP Server
 
 ```bash
-claude mcp remove puppeteer
+claude mcp remove playwright
 claude mcp remove chrome-devtools
 ```
 
@@ -184,7 +184,7 @@ claude mcp --help
 If claude mcp list shows server as disconnected:
 
 1. Check if npx is available: npx --version
-2. Try installing the package manually: npx -y @modelcontextprotocol/server-puppeteer
+2. Try installing the package manually: npx -y @modelcontextprotocol/server-playwright
 3. Check for errors in terminal output
 4. Restart Claude Code CLI
 
@@ -200,12 +200,12 @@ Ensure you're using the correct scope flag:
 
 **Correct:**
 ```bash
-claude mcp add -s user puppeteer -- npx -y @modelcontextprotocol/server-puppeteer
+claude mcp add -s user playwright -- npx -y @modelcontextprotocol/server-playwright
 ```
 
 **Incorrect:**
 ```bash
-claude mcp add -s user puppeteer npx -y @modelcontextprotocol/server-puppeteer
+claude mcp add -s user playwright npx -y @modelcontextprotocol/server-playwright
 ```
 
 ## Configuration File
@@ -214,10 +214,10 @@ MCP servers are stored in ~/.claude.json under the mcpServers section:
 
 {
   "mcpServers": {
-    "puppeteer": {
+    "playwright": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
+      "args": ["-y", "@modelcontextprotocol/server-playwright"],
       "env": {}
     },
     "chrome-devtools": {

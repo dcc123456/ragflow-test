@@ -4,9 +4,9 @@
 
 **前置条件**:
 
-- 测试环境：https://stage.ragflow.io
-- 测试账号：yuzhichang@gmail.com
-- 密码：123456
+- 测试环境：{{url}}
+- 测试账号：{{account}}
+- 密码：{{password}}
 - Stripe 测试模式已启用（`BILLING_ENABLED=1`）
 - 所有 billing 环境变量已正确配置
 
@@ -20,7 +20,7 @@
 **测试步骤**:
 
 1. **登录系统**
-   - 打开浏览器，访问 `https://stage.ragflow.io`
+   - 打开浏览器，访问 `{{url}}`
    - 点击"登录"按钮
    - 使用邮箱和密码登录
    - 验证登录成功，跳转到主控制台

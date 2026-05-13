@@ -5,7 +5,7 @@
 ## 功能特性
 
 - **多浏览器支持**：基于 Playwright，支持 Chrome/Chromium 自动化
-- **MCP 工具集成**：支持通过 Chrome DevTools Protocol 和 Puppeteer MCP 工具执行测试
+- **MCP 工具集成**：支持通过 Chrome DevTools Protocol 和 Playwright MCP 工具执行测试
 - **测试任务管理**：支持按任务名选择性执行测试（login / add-llm / billing）
 - **截图与日志**：自动保存测试截图、执行日志和测试报告
 - **飞书通知**：测试开始/结束/失败时自动发送飞书机器人通知
@@ -43,6 +43,8 @@ ragflow-test/
 
 ## 安装
 
+### 提示ai 根据doc\mcp-web-testing-setup\SKILL.md 安装 'playwright' 和 'chrome-devtools'
+
 ```bash
 npm install
 ```
@@ -51,35 +53,37 @@ npm install
 
 编辑 `main/config.md` 或设置环境变量：
 
-| 配置项 | 环境变量 | 说明 | 默认值 |
-|--------|---------|------|--------|
-| 测试 URL | `TEST_URL` | RagFlow 服务地址 | http://localhost:9222 |
-| 用户名 | `TEST_USERNAME` | 测试账号邮箱 | test1@gmail.com |
-| 密码 | `TEST_PASSWORD` | 测试账号密码 | 123456 |
-| SILICONFLOW API Key | `SILICONFLOW_API_KEY` | 添加 LLM 用 | - |
-| 飞书 Webhook | `FEISHU_WEBHOOK` | 通知地址 | - |
-| Headless 模式 | `HEADLESS` | 无头运行 | false |
+| 配置项       | 环境变量         | 说明             | 默认值                |
+| ------------ | ---------------- | ---------------- | --------------------- |
+| 测试 URL     | `TEST_URL`       | RagFlow 服务地址 | http://localhost:9222 |
+| 用户名       | `TEST_USERNAME`  | 测试账号邮箱     | test1@gmail.com       |
+| 密码         | `TEST_PASSWORD`  | 测试账号密码     | 123456                |
+| 飞书 Webhook | `FEISHU_WEBHOOK` | 通知地址         | -                     |
 
 ## 启动测试
 
 ### 方式一：使用测试脚本（推荐）
 
 运行所有测试：
+
 ```bash
 node scripts/run-tests.js
 ```
 
 运行指定任务：
+
 ```bash
 node scripts/run-tests.js --tasks login,add-llm
 ```
 
 指定测试 URL：
+
 ```bash
 node scripts/run-tests.js --url http://192.168.1.23:9222
 ```
 
 无头模式运行：
+
 ```bash
 node scripts/run-tests.js --headless
 ```
@@ -90,11 +94,11 @@ node scripts/run-tests.js --headless
 
 ## 测试任务
 
-| 任务 | 说明 | 依赖 |
-|------|------|------|
-| `login` | 登录功能测试 | - |
+| 任务      | 说明                            | 依赖  |
+| --------- | ------------------------------- | ----- |
+| `login`   | 登录功能测试                    | -     |
 | `add-llm` | 添加 SILICONFLOW LLM 模型提供商 | login |
-| `billing` | 订阅/计费页面测试 | login |
+| `billing` | 订阅/计费页面测试               | login |
 
 ## 测试输出
 

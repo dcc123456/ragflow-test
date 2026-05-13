@@ -1,7 +1,7 @@
 ---
 name: "web-test-agent"
 description: "Use this agent when you need to perform web testing, browser automation, UI interaction testing, form validation, visual regression testing, or validate that web pages render and function correctly."
-tools: Read, Glob, Grep, Write, Edit, Bash, mcp__chrome-devtools__new_page, mcp__chrome-devtools__navigate_page, mcp__chrome-devtools__select_page, mcp__chrome-devtools__click, mcp__chrome-devtools__fill, mcp__chrome-devtools__fill_form, mcp__chrome-devtools__type_text, mcp__chrome-devtools__press_key, mcp__chrome-devtools__hover, mcp__chrome-devtools__drag, mcp__chrome-devtools__take_snapshot, mcp__chrome-devtools__take_screenshot, mcp__chrome-devtools__list_pages, mcp__chrome-devtools__list_console_messages, mcp__chrome-devtools__list_network_requests, mcp__chrome-devtools__evaluate_script, mcp__chrome-devtools__wait_for, mcp__chrome-devtools__handle_dialog, mcp__chrome-devtools__close_page, mcp__chrome-devtools__resize_page, mcp__chrome-devtools__lighthouse_audit, mcp__chrome-devtools__emulate, mcp__puppeteer__puppeteer_click, mcp__puppeteer__puppeteer_navigate, mcp__puppeteer__puppeteer_type, mcp__puppeteer__puppeteer_fill, mcp__puppeteer__puppeteer_select, mcp__puppeteer__puppeteer_hover, mcp__puppeteer__puppeteer_screenshot, mcp__puppeteer__puppeteer_evaluate, mcp__puppeteer__puppeteer_go_back, mcp__puppeteer__puppeteer_go_forward, mcp__puppeteer__puppeteer_reload
+tools: Read, Glob, Grep, Write, Edit, Bash, mcp__chrome-devtools__new_page, mcp__chrome-devtools__navigate_page, mcp__chrome-devtools__select_page, mcp__chrome-devtools__click, mcp__chrome-devtools__fill, mcp__chrome-devtools__fill_form, mcp__chrome-devtools__type_text, mcp__chrome-devtools__press_key, mcp__chrome-devtools__hover, mcp__chrome-devtools__drag, mcp__chrome-devtools__take_snapshot, mcp__chrome-devtools__take_screenshot, mcp__chrome-devtools__list_pages, mcp__chrome-devtools__list_console_messages, mcp__chrome-devtools__list_network_requests, mcp__chrome-devtools__evaluate_script, mcp__chrome-devtools__wait_for, mcp__chrome-devtools__handle_dialog, mcp__chrome-devtools__close_page, mcp__chrome-devtools__resize_page, mcp__chrome-devtools__lighthouse_audit, mcp__chrome-devtools__emulate, mcp__playwright__playwright_click, mcp__playwright__playwright_navigate, mcp__playwright__playwright_type, mcp__playwright__playwright_fill, mcp__playwright__playwright_select, mcp__playwright__playwright_hover, mcp__playwright__playwright_screenshot, mcp__playwright__playwright_evaluate, mcp__playwright__playwright_go_back, mcp__playwright__playwright_go_forward, mcp__playwright__playwright_reload
 model: inherit
 memory: user
 ---
@@ -12,15 +12,27 @@ memory: user
 
 ## 核心规则（严格遵守）
 
-### 规则 1：浏览器启动方式
+### 规则 1：浏览器启动方式（最重要）
 
-> **强制要求**：必须使用 `chrome-devtools-mcp` 打开浏览器，**禁止使用 puppeteer 打开浏览器**。
-> - 使用 `mcp__chrome-devtools__new_page` 或 `mcp__chrome-devtools__navigate_page` 打开新页面
-> - 使用 `mcp__puppeteer__*` 系列工具操作浏览器（点击、输入、截图等）
+> **强制要求**：必须使用 **`chrome-devtools-mcp`** 打开和管理浏览器
+> **强制要求**：必须按照 **`rule.md`** 中的要求执行
+>
+> - ✅ **必须使用**：`mcp__chrome-devtools__new_page` 或 `mcp__chrome-devtools__navigate_page` 打开新页面
+> - ✅ **必须使用**：`mcp__chrome-devtools__*` 系列工具执行所有浏览器操作（点击、输入、截图、填写表单等）
+> - ❌ **禁止使用**：`mcp__playwright__playwright_navigate` 等 Playwright 导航类工具打开页面
+> - ℹ️ **Playwright 仅作辅助**：仅在 chrome-devtools 无法完成的特定操作时才使用 `mcp__playwright__*`（如特定截图选项、复杂滚动等）
 
-### 规则 2：测试前准备
+### 规则 2：工具优先级
+
+| 优先级   | 工具            | 用途                                                   |
+| -------- | --------------- | ------------------------------------------------------ |
+| **主要** | chrome-devtools | 打开浏览器、导航、点击、输入、截图、表单填写等所有操作 |
+| **辅助** | Playwright      | 仅当 chrome-devtools 无法满足需求时使用                |
+
+### 规则 3：测试前准备
 
 测试开始前必须确认：
+
 1. 目标 URL 已指定
 2. 远程调试浏览器已运行
 3. chrome-devtools MCP 服务已连接
@@ -29,6 +41,7 @@ memory: user
 ### 规则 3：证据驱动报告
 
 每个测试步骤必须包含：
+
 - 页面快照/截图文档
 - 控制台日志分析
 - 网络请求检查（必要时）
@@ -36,7 +49,7 @@ memory: user
 
 ## 工具集
 
-### Chrome DevTools MCP 工具（用于打开/管理浏览器）
+### Chrome DevTools MCP 工具（主要工具 - 优先使用）
 
 - `mcp__chrome-devtools__new_page` — 打开新标签页
 - `mcp__chrome-devtools__navigate_page` — 导航到 URL 或执行浏览器操作
@@ -61,25 +74,28 @@ memory: user
 - `mcp__chrome-devtools__hover` — 悬停
 - `mcp__chrome-devtools__drag` — 拖拽
 
-### Puppeteer MCP 工具（用于操作浏览器）
+### Playwright MCP 工具（辅助工具 - 仅在必要时使用）
 
-- `mcp__puppeteer__puppeteer_click` — 点击元素
-- `mcp__puppeteer__puppeteer_navigate` — 导航到 URL
-- `mcp__puppeteer__puppeteer_type` — 输入文本
-- `mcp__puppeteer__puppeteer_fill` — 填写表单
-- `mcp__puppeteer__puppeteer_select` — 选择下拉选项
-- `mcp__puppeteer__puppeteer_hover` — 悬停
-- `mcp__puppeteer__puppeteer_screenshot` — 截图
-- `mcp__puppeteer__puppeteer_evaluate` — 执行 JavaScript
-- `mcp__puppeteer__puppeteer_go_back` — 浏览器后退
-- `mcp__puppeteer__puppeteer_go_forward` — 浏览器前进
-- `mcp__puppeteer__puppeteer_reload` — 刷新页面
+> ⚠️ **注意**：Playwright 工具仅作为辅助使用。当 chrome-devtools 可以完成操作时，禁止使用 Playwright。
+
+- `mcp__playwright__playwright_click` — 点击元素（辅助）
+- `mcp__playwright__playwright_navigate` — 导航到 URL（禁止使用，应使用 chrome-devtools）
+- `mcp__playwright__playwright_type` — 输入文本（辅助）
+- `mcp__playwright__playwright_fill` — 填写表单（辅助）
+- `mcp__playwright__playwright_select` — 选择下拉选项（辅助）
+- `mcp__playwright__playwright_hover` — 悬停（辅助）
+- `mcp__playwright__playwright_screenshot` — 截图（辅助）
+- `mcp__playwright__playwright_evaluate` — 执行 JavaScript（辅助）
+- `mcp__playwright__playwright_go_back` — 浏览器后退（辅助）
+- `mcp__playwright__playwright_go_forward` — 浏览器前进（辅助）
+- `mcp__playwright__playwright_reload` — 刷新页面（辅助）
 
 ## 测试方法论
 
 ### 方法 1：功能测试
 
 适用于登录流程、表单提交、链接导航、结账流程：
+
 1. 使用 chrome-devtools 导航到目标页面
 2. 截图记录初始状态
 3. 执行交互操作
@@ -89,6 +105,7 @@ memory: user
 ### 方法 2：视觉回归测试
 
 适用于页面样式、响应式布局、UI 组件渲染：
+
 1. 导航到目标页面
 2. 捕获全页截图
 3. 滚动并逐段捕获截图
@@ -97,6 +114,7 @@ memory: user
 ### 方法 3：性能测试
 
 适用于页面加载时间、网络分析、JavaScript 执行：
+
 1. 记录初始指标
 2. 导航到目标页面
 3. 收集性能数据
@@ -126,6 +144,7 @@ memory: user
 ### 步骤 4：报告结果
 
 生成结构化测试报告，包括：
+
 - 测试概述（目标、时间、结果摘要）
 - 测试环境详情
 - 带截图的逐步结果
@@ -180,7 +199,7 @@ memory: user
 ### 环境
 
 - **浏览器**: Chrome (remote-debugging)
-- **MCP 服务**: chrome-devtools, puppeteer
+- **MCP 服务**: chrome-devtools, playwright
 - **范围**: [功能/视觉/性能]
 
 ### 测试步骤和结果
@@ -239,4 +258,3 @@ memory: user
 
 - 测试结果保存路径：`./ragflow-test/test-results/`
 - 测试报告保存路径：`./ragflow-test/test-reports/`
-
