@@ -18,6 +18,7 @@
 
 const { chromium } = require("playwright");
 require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
+const { loginWithFallback } = require("./utils/login-helper");
 
 const TEST_CONFIG = {
   baseUrl: process.env.TEST_URL || "http://localhost:9222",
@@ -183,67 +184,17 @@ async function runAddLLMTest() {
   const results = [];
 
   try {
-    // ========== Step 0: 登录 ==========
-    console.log("[Step 0] 确保已登录...");
-    await page.goto(`${TEST_CONFIG.baseUrl}/login`, { timeout: TEST_CONFIG.timeout });
-    await page.waitForLoadState("networkidle");
-    await page.waitForTimeout(2000);
-
-    // 检查是否已登录
-    const isLoggedIn = await page.evaluate(() => {
-      return !window.location.href.includes("/login");
-    });
-
-    if (!isLoggedIn) {
-      console.log("[Step 0] 需要登录...");
-
-      // 填写登录表单
-      await page.evaluate(
-        ({ email, password }) => {
-          const setNativeValue = (element, value) => {
-            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-              HTMLInputElement.prototype, "value",
-            )?.set;
-            if (nativeInputValueSetter) {
-              nativeInputValueSetter.call(element, value);
-            } else {
-              element.value = value;
-            }
-            element.dispatchEvent(new Event("input", { bubbles: true }));
-            element.dispatchEvent(new Event("change", { bubbles: true }));
-          };
-
-          const inputs = Array.from(document.querySelectorAll("input"));
-          for (const input of inputs) {
-            const type = input.type?.toLowerCase();
-            const placeholder = input.placeholder?.toLowerCase();
-            if (!input.value && (type === "text" || type === "email" || type === "") && placeholder.includes("email")) {
-              setNativeValue(input, email);
-            }
-            if (!input.value && type === "password") {
-              setNativeValue(input, password);
-            }
-          }
-        },
-        { email: TEST_CONFIG.email, password: TEST_CONFIG.password },
-      );
-
-      await page.waitForTimeout(500);
-
-      // 点击登录按钮
-      await page.evaluate(() => {
-        const buttons = Array.from(document.querySelectorAll("button"));
-        const btn = buttons.find(b => b.textContent?.trim() === "Sign in" && !b.disabled);
-        if (btn) btn.click();
-      });
-
-      await page.waitForFunction(() => !window.location.href.includes("/login"), { timeout: 15000 });
+    // ========== Step 0: 登录（使用公共登录方法）============
+    console.log("[Step 0] 执行登录...");
+    const loginResult = await loginWithFallback(page, TEST_CONFIG);
+    if (loginResult.success) {
       console.log("[Step 0] ✅ 登录成功");
+      results.push({ step: 0, status: "passed", message: "登录成功" });
     } else {
-      console.log("[Step 0] ✅ 已登录");
+      console.log("[Step 0] ❌ 登录失败:", loginResult.message);
+      results.push({ step: 0, status: "failed", message: "登录失败" });
+      return results;
     }
-
-    results.push({ step: 0, status: "passed", message: "登录成功" });
 
     // ========== Step 1: 进入 Model providers 页面 ==========
     console.log("[Step 1] 进入 Model providers 页面...");

@@ -37,13 +37,56 @@ for each 任务 in 选中任务列表:
 
 #### 目的
 
-需要生成测试脚本，这样只有第一次需要大模型介入测试，后续除非页面修改，否则可以直接使用脚本进行测试
+**边测边写脚本**，生成的脚本本身即为步骤记录。后续执行脚本即可自动测试，无需大模型介入。
 
-#### 实现步骤
+#### 执行阶段
 
-- 在 `test-script-temp` 的目录下创建 `{任务名}-test.playwright.js` 文件，用于存放测试脚本文件,如果已经存在，清空它的内容
-- 一个操作成功后，就在脚本文件中使用playwright记录步骤，不能遗漏任何一个操作步骤
-- 待所有测试通过后，测试生成的测试脚本。如果脚本测试通过，则将脚本移入`test-script`目录下；否则判断测试脚本是哪里有问题，修改脚本，重新测试
+**阶段一：创建测试脚本**
+
+- 创建/清空 `test-script-temp/{任务名}-test.playwright.js`
+- 脚本文件结构：
+  ```javascript
+  const { chromium } = require("playwright");
+  const TEST_CONFIG = {
+    baseUrl: process.env.TEST_URL || "http://localhost:9222",
+    email: process.env.TEST_EMAIL || "dcc-test1@gmail.com",
+    password: process.env.TEST_PASSWORD || "123456",
+    timeout: 30000,
+  };
+
+  async function runTest() {
+    // 浏览器初始化...
+    // 每个步骤的 playwright 代码...
+  }
+
+  module.exports = { runTest };
+  ```
+
+**阶段二：边测边写（核心）**
+
+每完成一个操作，**立即将对应的 playwright 代码写入脚本文件**，包括：
+
+| 操作 | 写入内容 |
+|------|----------|
+| 导航到页面 | `await page.goto(...)` |
+| 点击元素 | `await page.click('selector')` |
+| 填写表单 | `await page.fill('selector', 'value')` |
+| 上传文件 | `await page.setInputFiles('input[type=file]', 'path')` |
+| 等待加载 | `await page.waitForLoadState('networkidle')` |
+| 截图 | `await page.screenshot({ path: '...' })` |
+| 断言验证 | `const result = await page.evaluate(...)` |
+
+**禁止**：测完再补脚本、跳过任何步骤、只记录日志不写代码
+
+**阶段三：脚本验证**
+
+1. 运行 `test-script-temp/{任务名}-test.playwright.js`
+2. 脚本执行成功（exit code = 0）→ 移动到 `test-script/` 目录
+3. 脚本执行失败 → 定位问题、修改脚本、重新运行
+
+#### 脚本即记录
+
+脚本文件 `test-script-temp/{任务名}-test.playwright.js` 是唯一的步骤记录，无需额外日志。每个步骤用代码如实记录，可追溯可重放。
 
 ### 资源限制配置
 

@@ -22,6 +22,7 @@
 
 const { chromium } = require("playwright");
 require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
+const { loginWithFallback } = require("./utils/login-helper");
 
 const TEST_CONFIG = {
   baseUrl: process.env.BILLING_URL || process.env.TEST_URL || "http://localhost:9222",
@@ -51,60 +52,17 @@ async function runBillingTest() {
   const results = [];
 
   try {
-    // ========== Step 1: 登录系统 ==========
+    // ========== Step 1: 登录系统（使用公共登录方法）============
     console.log("[Step 1] 登录系统...");
-    await page.goto(`${TEST_CONFIG.baseUrl}/login`, {
-      timeout: TEST_CONFIG.timeout,
-    });
-    await page.waitForLoadState("networkidle");
-    await page.waitForTimeout(2000);
-
-    const filled = await page.evaluate(
-      ({ email, password }) => {
-        const setNativeValue = (element, value) => {
-          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-            HTMLInputElement.prototype,
-            "value",
-          )?.set;
-          if (nativeInputValueSetter) {
-            nativeInputValueSetter.call(element, value);
-          } else {
-            element.value = value;
-          }
-          element.dispatchEvent(new Event("input", { bubbles: true }));
-          element.dispatchEvent(new Event("change", { bubbles: true }));
-        };
-
-        const emailInput = document.querySelector(
-          'input[type="text"], input[type="email"], input:not([type])',
-        );
-        const passwordInput = document.querySelector('input[type="password"]');
-        if (emailInput) setNativeValue(emailInput, email);
-        if (passwordInput) setNativeValue(passwordInput, password);
-        return { emailFound: !!emailInput, passwordFound: !!passwordInput };
-      },
-      { email: TEST_CONFIG.email, password: TEST_CONFIG.password },
-    );
-
-    console.log(
-      `[Step 1] DOM填写: email=${filled.emailFound}, password=${filled.passwordFound}`,
-    );
-
-    await page.waitForTimeout(500);
-
-    await page.evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll("button"));
-      const btn = buttons.find(
-        (b) => b.textContent?.trim() === "Sign in" && !b.disabled,
-      );
-      if (btn) btn.click();
-    });
-
-    await page.waitForFunction(() => !window.location.href.includes("/login"), {
-      timeout: 15000,
-    });
-    console.log("[Step 1] ✅ 登录成功");
-    results.push({ step: 1, status: "passed", message: "登录系统成功" });
+    const loginResult = await loginWithFallback(page, TEST_CONFIG);
+    if (loginResult.success) {
+      console.log("[Step 1] ✅ 登录成功");
+      results.push({ step: 1, status: "passed", message: "登录系统成功" });
+    } else {
+      console.log("[Step 1] ❌ 登录失败:", loginResult.message);
+      results.push({ step: 1, status: "failed", message: "登录失败" });
+      return results;
+    }
 
     // ========== Step 2: 导航到订阅页面 ==========
     console.log("[Step 2] 导航到 Pricing 页面...");
