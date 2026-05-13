@@ -1,12 +1,14 @@
-## 测试配置
+## 非常重要，严格遵守
+
+### 测试文件保存规则
 
 **Agent**: 仅使用 `web-test-agent` 执行测试
 
-**截图路径**: `/screenshots`
+**截图路径**: `../screenshots`
 
-**日志路径**: `/test-results`
+**日志路径**: `../test-results`
 
-**报告路径**: `/test-reports`
+**报告路径**: `../test-reports`
 
 **禁止**在其他路径中保存截图，日志，报告等文件
 
@@ -89,7 +91,11 @@ URL：http://192.168.1.23:9222/
 
 ### 执行流程
 
-- 见[执行流程规则](rules/run-rule.md)
+- 见[执行流程规则](../rules/run-rule.md)
+
+### 测试工具规则
+
+- 见[测试工具规则](../rules/tool-rule.md)
 
 ---
 
@@ -118,7 +124,7 @@ URL：http://192.168.1.23:9222/
 
 ## 测试用例编写规范
 
-- 参考[测试用例编写规范](rules/case-rule.md)
+- 参考[测试用例编写规范](../rules/case-rule.md)
 
 ---
 
@@ -137,7 +143,7 @@ URL：http://192.168.1.23:9222/
 
 ## 测试后处理
 
-- 见[通知规范](rules/notify-rule.md)
+- 见[通知规范](../rules/notify-rule.md)
 
 ---
 

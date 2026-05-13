@@ -1,4 +1,4 @@
-# Stripe Billing 订阅流程测试用例
+# price 页面 Stripe Billing 订阅流程测试用例
 
 **测试目标**: 验证用户完成 Stripe Checkout 订阅购买的完整流程
 
